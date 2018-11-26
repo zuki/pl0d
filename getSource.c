@@ -17,6 +17,7 @@
 static FILE *fpi;				/*　ソースファイル　*/
 static FILE *fptex;			/*　LaTeX出力ファイル　*/
 static char line[MAXLINE];	/*　１行分の入力バッファー　*/
+static int lineNo;			/*　行数　*/
 static int lineIndex;			/*　次に読む文字の位置　*/
 static char ch;				/*　最後に読んだ文字　*/
 
@@ -131,6 +132,7 @@ void closeSource()				 /*　ソースファイルと.html（または.tex）フ�
 
 void initSource()
 {
+	lineNo = -1;					/*　初期設定　*/
 	lineIndex = -1;				 /*　初期設定　*/
 	ch = '\n';
 	printed = 1;
@@ -153,20 +155,17 @@ void finalSource()
 	if (cToken.kind==Period)
 		printcToken();
 	else
-		errorInsert(Period);
+		//errorInsert(Period);
+		error("missing period: inserted");
 	fprintf(fptex,"\n</PRE>\n</BODY>\n</HTML>\n");
 	/* 	fprintf(fptex,"\n\\end{document}\n"); */
 }
 
 /*　通常のエラーメッセージの出力の仕方（参考まで）　*/
-/*
+
 void error(char *m)
 {
-	if (lineIndex > 0)
-		printf("%*s\n", lineIndex, "***^");
-	else
-		printf("^\n");
-	printf("*** error *** %s\n", m);
+	printf("[%d:%d] %s\n", lineNo, lineIndex, m);
 	errorNo++;
 	if (errorNo > MAXERROR){
 		printf("too many errors\n");
@@ -174,7 +173,7 @@ void error(char *m)
 		exit (1);
 	}
 }
-*/
+
 
 void errorNoCheck()			/*　エラーの個数のカウント、多すぎたら終わり　*/
 {
@@ -248,7 +247,8 @@ void errorMessage(char *m)	/*　エラーメッセージを.html（または.tex
 
 void errorF(char *m)			/*　エラーメッセージを出力し、コンパイル終了　*/
 {
-	errorMessage(m);
+	//errorMessage(m);
+	printf("[%d:%d] %s\n", lineNo, lineIndex, m);
 	fprintf(fptex, "fatal errors\n</PRE>\n</BODY>\n</HTML>\n");
 	/* fprintf(fptex, "fatal errors\n\\end{document}\n"); */
 	if (errorNo)
@@ -268,6 +268,7 @@ char nextChar()				/*　次の１文字を返す関数　*/
 	if (lineIndex == -1){
 		if (fgets(line, MAXLINE, fpi) != NULL){
 /*			puts(line); */	/*　通常のエラーメッセージの出力の場合（参考まで）　*/
+			lineNo++;
 			lineIndex = 0;
 		} else {
 			errorF("end of file\n");      /* end of fileならコンパイル終了 */
@@ -309,7 +310,8 @@ Token nextToken()			/*　次のトークンを読んで返す関数　*/
 		} while (  charClassT[ch] == letter
 				|| charClassT[ch] == digit );
 		if (i >= MAXNAME){
-			errorMessage("too long");
+			//errorMessage("too long");
+			error("too long");
 			i = MAXNAME - 1;
 		}
 		ident[i] = '\0';
@@ -329,7 +331,8 @@ Token nextToken()			/*　次のトークンを読んで返す関数　*/
 			i++; ch = nextChar();
 		} while (charClassT[ch] == digit);
       		if (i>MAXNUM)
-      			errorMessage("too large");
+      			//errorMessage("too large");
+				error("too large");
       		temp.kind = Num;
 		temp.u.value = num;
 		break;
@@ -378,15 +381,22 @@ Token checkGet(Token t, KeyId k)			/*　t.kind == k のチェック　*/
 	/*　t を捨て、次のトークンを読んで返す（ t を k で置き換えたことになる）　*/
 	/*　それ以外の場合、k を挿入したことにして、t を返す　*/
 {
+	char message[256];
+
 	if (t.kind==k)
 			return nextToken();
 	if ((isKeyWd(k) && isKeyWd(t.kind)) ||
 		(isKeySym(k) && isKeySym(t.kind))){
-			errorDelete();
-			errorInsert(k);
+
+			//errorDelete();
+			//errorInsert(k);
+			sprintf(message, "expected '%s', but '%s'", KeyWdT[(int)k].word, KeyWdT[(int)t.kind].word);
+			error(message);
 			return nextToken();
 	}
-	errorInsert(k);
+	//errorInsert(k);
+	sprintf(message, "missing '%s': inserted", KeyWdT[(int)k].word);
+	error(message);
 	return t;
 }
 

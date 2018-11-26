@@ -115,7 +115,7 @@ int openSource(char fileName[]) 		/*　ソースファイルのopen　*/
 	if ( (fptex = fopen(fileNameO,"w")) == NULL ) {		 /*　.texファイルを作る　*/
 		printf("can't open %s\n", fileNameO);
 		return 0;
-	} 
+	}
 	return 1;
 }
 
@@ -144,13 +144,14 @@ void finalSource()
 	if (cToken.kind==Period)
 		printcToken();
 	else
-		errorInsert(Period);
+		//errorInsert(Period);
+		error("missing period: inserted");
 	fprintf(fptex,"\n\\end{document}\n");
 }
-	
+
 /*　通常のエラーメッセージの出力の仕方（参考まで）　*/
 /*
-void error(char *m)	
+void error(char *m)
 {
 	if (lineIndex > 0)
 		printf("%*s\n", lineIndex, "***^");
@@ -160,7 +161,7 @@ void error(char *m)
 	errorNo++;
 	if (errorNo > MAXERROR){
 		printf("too many errors\n");
-		printf("abort compilation\n");	
+		printf("abort compilation\n");
 		exit (1);
 	}
 }
@@ -170,7 +171,7 @@ void errorNoCheck()			/*　エラーの個数のカウント、多すぎたら�
 {
 	if (errorNo++ > MAXERROR){
 		fprintf(fptex, "too many errors\n\\end{document}\n");
-		printf("abort compilation\n");	
+		printf("abort compilation\n");
 		exit (1);
 	}
 }
@@ -228,11 +229,12 @@ void errorMessage(char *m)	/*　エラーメッセージを.texファイルに�
 
 void errorF(char *m)			/*　エラーメッセージを出力し、コンパイル終了　*/
 {
-	errorMessage(m);
+	//errorMessage(m);
+	printf("[%d:%d] *** error *** %s\n", lineNo, lineIndex, m);
 	fprintf(fptex, "fatal errors\n\\end{document}\n");
 	if (errorNo)
 		printf("total %d errors\n", errorNo);
-	printf("abort compilation\n");	
+	printf("abort compilation\n");
 	exit (1);
 }
 
@@ -245,7 +247,7 @@ char nextChar()				/*　次の１文字を返す関数　*/
 {
 	char ch;
 	if (lineIndex == -1){
-		if (fgets(line, MAXLINE, fpi) != NULL){ 
+		if (fgets(line, MAXLINE, fpi) != NULL){
 /*			puts(line); */	/*　通常のエラーメッセージの出力の場合（参考まで）　*/
 			lineIndex = 0;
 		} else {
@@ -288,10 +290,11 @@ Token nextToken()			/*　次のトークンを読んで返す関数　*/
 		} while (  charClassT[ch] == letter
 				|| charClassT[ch] == digit );
 		if (i >= MAXNAME){
-			errorMessage("too long");
+			//errorMessage("too long");
+			error("too long");
 			i = MAXNAME - 1;
-		}	
-		ident[i] = '\0'; 
+		}
+		ident[i] = '\0';
 		for (i=0; i<end_of_KeyWd; i++)
 			if (strcmp(ident, KeyWdT[i].word) == 0) {
 				temp.kind = KeyWdT[i].keyId;  		/*　予約語の場合　*/
@@ -308,7 +311,8 @@ Token nextToken()			/*　次のトークンを読んで返す関数　*/
 			i++; ch = nextChar();
 		} while (charClassT[ch] == digit);
       		if (i>MAXNUM)
-      			errorMessage("too large");
+      			//errorMessage("too large");
+				error("too large");
       		temp.kind = Num;
 		temp.u.value = num;
 		break;
@@ -361,11 +365,13 @@ Token checkGet(Token t, KeyId k)			/*　t.kind == k のチェック　*/
 			return nextToken();
 	if ((isKeyWd(k) && isKeyWd(t.kind)) ||
 		(isKeySym(k) && isKeySym(t.kind))){
-			errorDelete();
-			errorInsert(k);
+			//errorDelete();
+			//errorInsert(k);
+			error(sprintf("expected %s, but %s", KeyWdT[k], KeyWdT[t.kind]));
 			return nextToken();
 	}
-	errorInsert(k);
+	//errorInsert(k);
+	error(sprintf("missing %s: inserted", KeyWdT[k]));
 	return t;
 }
 
@@ -392,13 +398,13 @@ void printcToken()				/*　現在のトークンの印字　*/
 		fprintf(fptex, "$%s$", KeyWdT[i].word);
 	else if (i==(int)Id){							/*　Identfier　*/
 		switch (idKind) {
-		case varId: 
+		case varId:
 			fprintf(fptex, "%s", cToken.u.id); return;
-		case parId: 
+		case parId:
 			fprintf(fptex, "{\\sl %s}", cToken.u.id); return;
-		case funcId: 
+		case funcId:
 			fprintf(fptex, "{\\it %s}", cToken.u.id); return;
-		case constId: 
+		case constId:
 			fprintf(fptex, "{\\sf %s}", cToken.u.id); return;
 		}
 	}else if (i==(int)Num)			/*　Num　*/
@@ -409,6 +415,3 @@ void setIdKind (KindT k)			/*　現トークン(Id)の種類をセット　*/
 {
 	idKind = k;
 }
-
-
-

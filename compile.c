@@ -60,14 +60,14 @@ void block(int pIndex)		/*　pIndex はこのブロックの関数名のイン�
 			break;
 		}
 		break;
-	}			
+	}
 	backPatch(backP);			/*　内部関数を飛び越す命令にパッチ　*/
 	changeV(pIndex, nextCode());	/*　この関数の開始番地を修正　*/
 	genCodeV(ict, frameL());		/*　このブロックの実行時の必要記憶域をとる命令　*/
-	statement();				/*　このブロックの主文　*/		
+	statement();				/*　このブロックの主文　*/
 	genCodeR();				/*　リターン命令　*/
 	blockEnd();				/*　ブロックが終ったことをtableに連絡　*/
-}	
+}
 
 void constDecl()			/*　定数宣言のコンパイル　*/
 {
@@ -80,13 +80,16 @@ void constDecl()			/*　定数宣言のコンパイル　*/
 			if (token.kind==Num)
 				enterTconst(temp.u.id, token.u.value);	/*　定数名と値をテーブルに　*/
 			else
-				errorType("number");
+				//errorType("number");
+				error("miss match: number");
 			token = nextToken();
 		}else
-			errorMissingId();
+			//errorMissingId();
+			error("missing id");
 		if (token.kind!=Comma){		/*　次がコンマなら定数宣言が続く　*/
 			if (token.kind==Id){		/*　次が名前ならコンマを忘れたことにする　*/
-				errorInsert(Comma);
+				//errorInsert(Comma);
+				error("missing comma: inserted");
 				continue;
 			}else
 				break;
@@ -104,10 +107,12 @@ void varDecl()				/*　変数宣言のコンパイル　*/
 			enterTvar(token.u.id);		/*　変数名をテーブルに、番地はtableが決める　*/
 			token = nextToken();
 		}else
-			errorMissingId();
+			//errorMissingId();
+			error("missing id");
 		if (token.kind!=Comma){		/*　次がコンマなら変数宣言が続く　*/
 			if (token.kind==Id){		/*　次が名前ならコンマを忘れたことにする　*/
-				errorInsert(Comma);
+				//errorInsert(Comma);
+				error("missing comma: inserted");
 				continue;
 			}else
 				break;
@@ -135,7 +140,8 @@ void funcDecl()			/*　関数宣言のコンパイル　*/
 				break;
 			if (token.kind!=Comma){		/*　次がコンマならパラメタ名が続く　*/
 				if (token.kind==Id){		/*　次が名前ならコンマを忘れたことに　*/
-					errorInsert(Comma);
+					//errorInsert(Comma);
+					error("missing comma: inserted");
 					continue;
 				}else
 					break;
@@ -145,13 +151,15 @@ void funcDecl()			/*　関数宣言のコンパイル　*/
 		token = checkGet(token, Rparen);		/*　最後は")"のはず　*/
 		endpar();				/*　パラメタ部が終わったことをテーブルに連絡　*/
 		if (token.kind==Semicolon){
-			errorDelete();
+			//errorDelete();
+			error("extra semicolon: deleted");
 			token = nextToken();
 		}
 		block(fIndex);	/*　ブロックのコンパイル、その関数名のインデックスを渡す　*/
 		token = checkGet(token, Semicolon);		/*　最後は";"のはず　*/
-	} else 
-		errorMissingId();			/*　関数名がない　*/
+	} else
+		//errorMissingId();			/*　関数名がない　*/
+		error("missing id");
 }
 
 void statement()			/*　文のコンパイル　*/
@@ -166,7 +174,8 @@ void statement()			/*　文のコンパイル　*/
 			tIndex = searchT(token.u.id, varId);	/*　左辺の変数のインデックス　*/
 			setIdKind(k=kindT(tIndex));			/*　印字のための情報のセット　*/
 			if (k != varId && k != parId) 		/*　変数名かパラメタ名のはず　*/
-				errorType("var/par");
+				//errorType("var/par");
+				error("miss match type: var/par");
 			token = checkGet(nextToken(), Assign);			/*　":="のはず　*/
 			expression();					/*　式のコンパイル　*/
 			genCodeT(sto, tIndex);				/*　左辺への代入命令　*/
@@ -198,10 +207,12 @@ void statement()			/*　文のコンパイル　*/
 						return;
 					}
 					if (isStBeginKey(token)){		/*　次が文の先頭記号なら　*/
-						errorInsert(Semicolon);	/*　";"を忘れたことにする　*/
+						//errorInsert(Semicolon);	/*　";"を忘れたことにする　*/
+						error("missing semicolon: inserted");
 						break;
 					}
-					errorDelete();	/*　それ以外ならエラーとして読み捨てる　*/
+					//errorDelete();	/*　それ以外ならエラーとして読み捨てる　*/
+					error("extra token: deleted");
 					token = nextToken();
 				}
 			}
@@ -227,10 +238,11 @@ void statement()			/*　文のコンパイル　*/
 		case End: case Semicolon:			/*　空文を読んだことにして終り　*/
 			return;
 		default:				/*　文の先頭のキーまで読み捨てる　*/
-			errorDelete();				/*　今読んだトークンを読み捨てる　*/
+			//errorDelete();				/*　今読んだトークンを読み捨てる　*/
+			error("extra token: deleted");
 			token = nextToken();
 			continue;
-		}		
+		}
 	}
 }
 
@@ -273,7 +285,7 @@ void term()					/*　式の項のコンパイル　*/
 	KeyId k;
 	factor();
 	k = token.kind;
-	while (k==Mult || k==Div){	
+	while (k==Mult || k==Div){
 		token = nextToken();
 		factor();
 		if (k==Mult)
@@ -315,11 +327,14 @@ void factor()					/*　式の因子のコンパイル　*/
 					}
 				} else
 					token = nextToken();
-				if (pars(tIndex) != i) 
-					errorMessage("\\#par");	/*　pars(tIndex)は仮引数の個数　*/
+				if (pars(tIndex) != i)
+					//errorMessage("\\#par");	/*　pars(tIndex)は仮引数の個数　*/
+					error("\\#par");
 			}else{
-				errorInsert(Lparen);
-				errorInsert(Rparen);
+				//errorInsert(Lparen);
+				error("missing lparen: inserted");
+				//errorInsert(Rparen);
+				error("missing rparen: inserted");
 			}
 			genCodeT(cal, tIndex);				/*　call命令　*/
 			break;
@@ -334,13 +349,14 @@ void factor()					/*　式の因子のコンパイル　*/
 	}
 	switch (token.kind){					/*　因子の後がまた因子ならエラー　*/
 	case Id: case Num: case Lparen:
-		errorMissingOp();
+		//errorMissingOp();
+		error("missing op");
 		factor();
 	default:
 		return;
-	}	
+	}
 }
-	
+
 void condition()					/*　条件式のコンパイル　*/
 {
 	KeyId k;
@@ -356,7 +372,8 @@ void condition()					/*　条件式のコンパイル　*/
 		case NotEq: case LssEq: case GtrEq:
 			break;
 		default:
-			errorType("rel-op");
+			//errorType("rel-op");
+			error("miss match: rel-op");
 			break;
 		}
 		token = nextToken();
@@ -371,4 +388,3 @@ void condition()					/*　条件式のコンパイル　*/
 		}
 	}
 }
-
