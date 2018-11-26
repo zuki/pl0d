@@ -311,7 +311,7 @@ Token nextToken()			/*　次のトークンを読んで返す関数　*/
 				|| charClassT[ch] == digit );
 		if (i >= MAXNAME){
 			//errorMessage("too long");
-			error("too long");
+			error("too long identifier");
 			i = MAXNAME - 1;
 		}
 		ident[i] = '\0';
@@ -330,10 +330,10 @@ Token nextToken()			/*　次のトークンを読んで返す関数　*/
 			num = 10*num+(ch-'0');
 			i++; ch = nextChar();
 		} while (charClassT[ch] == digit);
-      		if (i>MAXNUM)
-      			//errorMessage("too large");
-				error("too large");
-      		temp.kind = Num;
+		if (i>MAXNUM)
+			//errorMessage("too large");
+			error("too large number");
+		temp.kind = Num;
 		temp.u.value = num;
 		break;
 	case colon:
