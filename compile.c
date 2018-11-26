@@ -37,8 +37,8 @@ int compile()
 	i = errorN();				/*　エラーメッセージの個数　*/
 	if (i!=0)
 		printf("%d errors\n", i);
-/*	listCode();	*/			/*　目的コードのリスト（必要なら）　*/
-	return i<MINERROR;		/*　エラーメッセージの個数が少ないかどうかの判定　*/
+	listCode();					/*　目的コードのリスト（必要なら）　*/
+	return i<MINERROR;			/*　エラーメッセージの個数が少ないかどうかの判定　*/
 }
 
 void block(int pIndex)		/*　pIndex はこのブロックの関数名のインデックス　*/
