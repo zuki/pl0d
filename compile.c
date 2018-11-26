@@ -299,7 +299,7 @@ void term()					/*　式の項のコンパイル　*/
 void factor()					/*　式の因子のコンパイル　*/
 {
 	int tIndex, i;
-	KeyId k;
+	KindT k;
 	if (token.kind==Id){
 		tIndex = searchT(token.u.id, varId);
 		setIdKind(k=kindT(tIndex));			/*　印字のための情報のセット　*/
@@ -385,6 +385,7 @@ void condition()					/*　条件式のコンパイル　*/
 		case NotEq:	genCodeO(neq); break;
 		case LssEq:	genCodeO(lseq); break;
 		case GtrEq:	genCodeO(greq); break;
+		default: break;
 		}
 	}
 }

@@ -9,7 +9,7 @@
 #define MAXLINE 120		/*　１行の最大文字数　*/
 #define MAXERROR 30		/*　これ以上のエラーがあったら終り　*/
 #define MAXNUM  14		/*　定数の最大桁数　*/
-#define TAB   5				/*　タブのスペース　*/
+#define TAB   4				/*　タブのスペース　*/
 #define INSERT_C  "#0000FF"  /* 挿入文字の色 */
 #define DELETE_C  "#FF0000"  /* 削除文字の色 */
 #define TYPE_C  "#00FF00"  /* タイプエラー文字の色 */
@@ -403,10 +403,10 @@ Token checkGet(Token t, KeyId k)			/*　t.kind == k のチェック　*/
 static void printSpaces()			/*　空白や改行の印字　*/
 {
 	while (CR-- > 0)
-		fprintf(fptex, "\n");
+		fprintf(fptex, "<br/>");
 		/* fprintf(fptex, "\\ \\par\n"); */
 	while (spaces-- > 0)
-		fprintf(fptex, " ");
+		fprintf(fptex, "&nbsp;");
 		/* fprintf(fptex, "\\ "); */
 	CR = 0; spaces = 0;
 }
